@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f8f7f3">
+  <meta name="description" content="VELASTYLE — Khám phá thời trang và tìm thấy phong cách của riêng bạn. Những thiết kế tinh tế, được tuyển chọn dành cho bạn.">
+  <title>VELASTYLE — Phong cách là chính bạn</title>
+  <link rel="icon" href="/static/images/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/fonts.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/experience.css">
+  <link rel="stylesheet" href="/static/css/atelier.css">
+  <link rel="stylesheet" href="/static/css/announcement.css">
+  <script src="/static/js/announcement.js" defer></script>
+  <script src="/static/js/atelier.js" defer></script>
+  <script src="/static/js/experience.js" defer></script>
+  <script src="/static/js/app.js" defer></script>
+</head>
+<body>
+  <div class="navigation-progress" aria-hidden="true"></div>
+  <a class="skip-link" href="#main">Chuyển đến nội dung</a>
+  <div class="announcement announcement-vertical">
+    <a class="announcement-brand" href="/" data-link><span class="announcement-emblem" aria-hidden="true">✳</span><span><b>TUYỂN CHỌN VELA</b><i>Mặc điều bạn yêu. Yêu điều bạn mặc.</i></span></a>
+    <a class="announcement-ticker" id="announcement-ticker" href="/thong-tin/giao-hang" data-link>
+      <span class="announcement-viewport"><span class="announcement-line"><span class="announcement-message-label">QUYỀN LỢI CỦA BẠN</span><span class="announcement-copy">Miễn phí vận chuyển từ 999.000đ</span><span class="announcement-detail">Thêm niềm vui trong tủ đồ</span><span class="announcement-message-cta">Xem chính sách</span><span class="announcement-arrow" aria-hidden="true">↗</span></span></span>
+    </a>
+    <div class="announcement-links"><a href="/thong-tin/giao-hang" data-link><span aria-hidden="true">↶</span> Đổi trả trong 30 ngày</a><span class="announcement-divider" aria-hidden="true"></span><a href="/san-pham?sort=newest" data-link>Khám phá bộ sưu tập <span aria-hidden="true">↗</span></a></div>
+    <div class="announcement-playback"><span class="announcement-counter" aria-hidden="true"><b>01</b><i>/</i>06</span><button class="announcement-toggle" type="button" aria-label="Tạm dừng dòng thông báo" aria-pressed="false">Ⅱ</button></div>
+  </div>
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="wordmark" data-link aria-label="VELASTYLE — Trang chủ">VELASTYLE<span class="brand-star">✳</span></a>
+      <nav class="desktop-nav" aria-label="Menu chính">
+        <a href="/" data-link data-nav="home">Trang chủ</a>
+        <a href="/san-pham?sort=newest" data-link data-nav="new">Hàng mới</a>
+        <a href="/san-pham?gender=Nữ" data-link data-nav="women">Nữ</a>
+        <a href="/san-pham?gender=Nam" data-link data-nav="men">Nam</a>
+        <a href="/san-pham?gender=Phụ kiện" data-link data-nav="accessories">Phụ kiện</a>
+        <a href="/danh-rieng-cho-ban" class="for-you-nav" data-link data-nav="foryou"><span>✧</span> Dành cho bạn</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-btn" data-action="search" aria-label="Tìm kiếm" title="Tìm kiếm"><svg data-icon="search"></svg></button>
+        <a class="icon-btn" href="/tai-khoan" data-link aria-label="Tài khoản" title="Tài khoản"><svg data-icon="user"></svg></a>
+        <a class="icon-btn favorite-nav" href="/yeu-thich" data-link aria-label="Yêu thích" title="Yêu thích"><svg data-icon="heart"></svg><span class="dot-counter" id="favorite-count"></span></a>
+        <a class="icon-btn bag-nav" href="/gio-hang" data-link aria-label="Giỏ hàng" title="Giỏ hàng"><svg data-icon="bag"></svg><span class="cart-count" id="cart-count">0</span></a>
+        <button class="icon-btn mobile-menu-button" data-action="mobile-menu" aria-label="Mở menu"><svg data-icon="menu"></svg></button>
+      </div>
+    </div>
+    <div class="search-panel" id="search-panel" hidden><form id="search-form"><svg data-icon="search"></svg><input id="search-input" name="q" placeholder="Bạn đang tìm điều gì? Đầm, áo khoác, túi xách…" aria-label="Tìm sản phẩm" autocomplete="off"><button type="button" class="image-search-link" data-action="image-search"><svg data-icon="camera"></svg> Tìm bằng ảnh</button><button class="text-button" type="submit">Tìm kiếm →</button><button class="icon-btn" type="button" data-action="close-search" aria-label="Đóng tìm kiếm"><svg data-icon="close"></svg></button></form></div>
+    <nav class="mobile-nav" id="mobile-nav" hidden aria-label="Menu di động"><a href="/san-pham?sort=newest" data-link>Hàng mới về</a><a href="/san-pham?gender=Nữ" data-link>Thời trang nữ</a><a href="/san-pham?gender=Nam" data-link>Thời trang nam</a><a href="/san-pham?gender=Unisex" data-link>Unisex</a><a href="/san-pham?gender=Phụ kiện" data-link>Phụ kiện</a><a href="/danh-rieng-cho-ban" data-link>✧ Dành riêng cho bạn</a><a href="/tim-bang-anh" data-link>Tìm kiếm bằng hình ảnh</a></nav>
+  </header>
+  <main id="main" tabindex="-1"><div class="initial-loading"><span class="loading-star">✳</span><p>Đang mở tủ đồ của bạn…</p></div></main>
+  <footer class="footer">
+    <div class="footer-main container"><div class="footer-brand"><a href="/" class="wordmark" data-link>VELASTYLE<span class="brand-star">✳</span></a><p>Thời trang có thể thay đổi.<br>Phong cách là chính bạn.</p><span class="footer-signature">Được chọn bằng gu. Được hiểu bằng công nghệ.</span></div><div><h3>Khám phá</h3><a href="/san-pham?sort=newest" data-link>Thiết kế mới</a><a href="/san-pham?gender=Nữ" data-link>Thời trang nữ</a><a href="/san-pham?gender=Nam" data-link>Thời trang nam</a><a href="/danh-rieng-cho-ban" data-link>Dành riêng cho bạn</a></div><div><h3>Chúng mình ở đây</h3><a href="/thong-tin/ve-chung-toi" data-link>Về VELASTYLE</a><a href="/thong-tin/giao-hang" data-link>Giao hàng & đổi trả</a><a href="/thong-tin/kich-thuoc" data-link>Hướng dẫn kích thước</a><a href="/thong-tin/lien-he" data-link>Liên hệ & hỗ trợ</a></div><div class="footer-note"><span class="small-label">MỘT CHÚT CẢM HỨNG MỖI NGÀY</span><p>Mặc điều bạn yêu.<br>Yêu điều bạn mặc.</p><a href="/san-pham" data-link class="underlined">Tìm cảm hứng của bạn <span>↗</span></a></div></div>
+    <div class="footer-bottom container"><span>© 2026 VELASTYLE. Dự án thời trang & gợi ý cá nhân hóa.</span><a href="/thong-tin/bao-mat" data-link>Quyền riêng tư</a><span>Tiếng Việt · VND ₫</span></div>
+  </footer>
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root" aria-live="polite" aria-atomic="true"></div>
+  <button class="back-top icon-btn" data-action="back-top" aria-label="Lên đầu trang"><svg data-icon="arrow-up"></svg></button>
+</body>
+</html>

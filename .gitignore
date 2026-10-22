@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.env
+data/*.db*
+data/.session-secret
+data/embeddings/*
+!data/embeddings/.gitkeep
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+*.log
+.python/
