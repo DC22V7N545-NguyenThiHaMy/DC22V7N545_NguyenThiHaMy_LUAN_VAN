@@ -37,7 +37,7 @@ if __name__=='__main__':
         page.wait_for_function("document.querySelector('#home-products')?.getAttribute('aria-busy') !== 'true'")
         assert page.locator('#home-products .product-card').count()==6
         assert page.locator('.hero-copy h1').inner_text().startswith('Một chút nắng.')
-        page.locator('[data-studio-action="quiz"]').click()
+        page.locator('[data-studio-action="quiz"]').first.click()
         page.locator('[data-quiz-key="gender"][data-quiz-value="Nữ"]').click()
         page.locator('[data-quiz-next]').click()
         page.locator('[data-quiz-key="style"][data-quiz-value="Nữ tính"]').click()

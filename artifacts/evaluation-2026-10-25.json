@@ -1,0 +1,141 @@
+{
+  "generated": "2026-10-25",
+  "environment": {
+    "python": "3.11.0",
+    "cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "os": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.1+cpu",
+    "numpy": "2.4.6"
+  },
+  "runs": {
+    "5": {
+      "run_id": 1,
+      "finished_at": "2026-10-25T15:58:05.909825",
+      "results": [
+        {
+          "precision_at_k": 0.05098039215686276,
+          "recall_at_k": 0.2549019607843137,
+          "ndcg_at_k": 0.1881798320246441,
+          "hit_rate_at_k": 0.2549019607843137,
+          "model_name": "collaborative",
+          "k": 5,
+          "coverage": 0.3968871595330739,
+          "inference_time_ms": 0.2285549019457083
+        },
+        {
+          "precision_at_k": 0.0,
+          "recall_at_k": 0.0,
+          "ndcg_at_k": 0.0,
+          "hit_rate_at_k": 0.0,
+          "model_name": "clip",
+          "k": 5,
+          "coverage": 0.12062256809338522,
+          "inference_time_ms": 2.981070588194758
+        },
+        {
+          "precision_at_k": 0.04705882352941177,
+          "recall_at_k": 0.23529411764705882,
+          "ndcg_at_k": 0.1563172182973573,
+          "hit_rate_at_k": 0.23529411764705882,
+          "model_name": "hybrid",
+          "k": 5,
+          "coverage": 0.38132295719844356,
+          "inference_time_ms": 3.107405882420768
+        }
+      ],
+      "users": 51,
+      "train_interactions": 6040,
+      "test_interactions": 51,
+      "simulated": true,
+      "protocol": "Leave-last-item-out theo thời gian; loại mọi tương tác của sản phẩm test khỏi train; cùng toàn bộ catalog chưa xem làm tập ứng viên; không negative sampling.",
+      "latency_scope": "Chấm điểm và xếp hạng trên CPU; không tính tải model, I/O và tạo embedding.",
+      "alpha": 0.5
+    },
+    "10": {
+      "run_id": 2,
+      "finished_at": "2026-10-25T15:58:06.725894",
+      "results": [
+        {
+          "precision_at_k": 0.03137254901960785,
+          "recall_at_k": 0.3137254901960784,
+          "ndcg_at_k": 0.20701781026408803,
+          "hit_rate_at_k": 0.3137254901960784,
+          "model_name": "collaborative",
+          "k": 10,
+          "coverage": 0.5642023346303502,
+          "inference_time_ms": 0.21287450974840813
+        },
+        {
+          "precision_at_k": 0.00392156862745098,
+          "recall_at_k": 0.0392156862745098,
+          "ndcg_at_k": 0.01396890929835381,
+          "hit_rate_at_k": 0.0392156862745098,
+          "model_name": "clip",
+          "k": 10,
+          "coverage": 0.19844357976653695,
+          "inference_time_ms": 2.7102431372173563
+        },
+        {
+          "precision_at_k": 0.027450980392156866,
+          "recall_at_k": 0.27450980392156865,
+          "ndcg_at_k": 0.16788770500288416,
+          "hit_rate_at_k": 0.27450980392156865,
+          "model_name": "hybrid",
+          "k": 10,
+          "coverage": 0.5291828793774319,
+          "inference_time_ms": 2.786174509863343
+        }
+      ],
+      "users": 51,
+      "train_interactions": 6040,
+      "test_interactions": 51,
+      "simulated": true,
+      "protocol": "Leave-last-item-out theo thời gian; loại mọi tương tác của sản phẩm test khỏi train; cùng toàn bộ catalog chưa xem làm tập ứng viên; không negative sampling.",
+      "latency_scope": "Chấm điểm và xếp hạng trên CPU; không tính tải model, I/O và tạo embedding.",
+      "alpha": 0.5
+    },
+    "20": {
+      "run_id": 3,
+      "finished_at": "2026-10-25T15:58:07.466623",
+      "results": [
+        {
+          "precision_at_k": 0.017647058823529415,
+          "recall_at_k": 0.35294117647058826,
+          "ndcg_at_k": 0.21653563209480642,
+          "hit_rate_at_k": 0.35294117647058826,
+          "model_name": "collaborative",
+          "k": 20,
+          "coverage": 0.7587548638132295,
+          "inference_time_ms": 0.20235490196415307
+        },
+        {
+          "precision_at_k": 0.00392156862745098,
+          "recall_at_k": 0.0784313725490196,
+          "ndcg_at_k": 0.02323010127512203,
+          "hit_rate_at_k": 0.0784313725490196,
+          "model_name": "clip",
+          "k": 20,
+          "coverage": 0.33073929961089493,
+          "inference_time_ms": 2.8640823528643096
+        },
+        {
+          "precision_at_k": 0.017647058823529415,
+          "recall_at_k": 0.35294117647058826,
+          "ndcg_at_k": 0.18780865062258703,
+          "hit_rate_at_k": 0.35294117647058826,
+          "model_name": "hybrid",
+          "k": 20,
+          "coverage": 0.708171206225681,
+          "inference_time_ms": 2.9308352941370686
+        }
+      ],
+      "users": 51,
+      "train_interactions": 6040,
+      "test_interactions": 51,
+      "simulated": true,
+      "protocol": "Leave-last-item-out theo thời gian; loại mọi tương tác của sản phẩm test khỏi train; cùng toàn bộ catalog chưa xem làm tập ứng viên; không negative sampling.",
+      "latency_scope": "Chấm điểm và xếp hạng trên CPU; không tính tải model, I/O và tạo embedding.",
+      "alpha": 0.5
+    }
+  }
+}

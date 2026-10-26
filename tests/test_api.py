@@ -1,13 +1,13 @@
-import uuid
 from sqlalchemy import select, func
 from app.database import SessionLocal
 from app.models import Interaction, ProductVariant, ModelRun
 
 def test_register_login_session_and_logout(client):
-    email = f'test-{uuid.uuid4().hex}@example.com'
-    payload = {'full_name':'Người kiểm thử', 'email':email, 'password':'GoodPass123!'}
-    response = client.post('/api/auth/register', json=payload)
-    assert response.status_code == 201
+    from tests.test_auth import register_verified
+    payload = register_verified(client)
+    email = payload['email']
+    response = client.post('/api/auth/login', json={'identifier':email, 'password':payload['password']})
+    assert response.status_code == 200
     assert 'HttpOnly' in response.headers['set-cookie']
     assert 'password_hash' not in response.json()
     assert client.get('/api/auth/me').json()['email'] == email
@@ -68,7 +68,8 @@ def test_cart_checkout_and_stock(user):
     assert user.post('/api/cart', json={'variant_id':v['id'],'quantity':20}).status_code == 409
 
 def test_cart_isolation(client):
-    client.post('/api/auth/register', json={'full_name':'Khách khác','email':f'{uuid.uuid4().hex}@example.com','password':'GoodPass123!'})
+    from tests.test_auth import register_verified
+    register_verified(client, full_name='Khách khác')
     assert client.patch('/api/cart/999999', json={'quantity':1}).status_code == 404
     assert client.delete('/api/cart/999999').status_code == 404
 
@@ -91,7 +92,7 @@ def test_taxonomy_in_use_and_settings(admin):
     assert admin.put('/api/admin/ai/settings',json={'alpha':1.5}).status_code==422
 
 def test_recommendations_and_real_similar(user):
-    for method in ['collaborative','clip','hybrid']:
+    for method in ['collaborative','als','clip','hybrid']:
         response=user.get('/api/recommendations/'+method)
         assert response.status_code==200, response.text
         assert response.json()['items']

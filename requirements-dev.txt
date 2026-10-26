@@ -1,2 +1,4 @@
 -r requirements.txt
 playwright>=1.50
+# Starlette TestClient prefers httpx2 (httpx is deprecated there); runtime code still uses httpx.
+httpx2>=2,<3

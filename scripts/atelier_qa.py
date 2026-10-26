@@ -30,7 +30,7 @@ if __name__=='__main__':
         assert page.locator('.muse-page h1').inner_text().startswith('Gu của bạn.')
         page.screenshot(path=str(ROOT/'artifacts/atelier-foryou-guest.png'))
         page.goto(BASE+'/tai-khoan',wait_until='networkidle')
-        page.locator('[data-demo="user"]').click()
+        page.fill('#identifier','linh@velastyle.vn');page.fill('#password','Vela@12345')
         page.locator('#auth-form button[type=submit]').click()
         page.locator('.muse-hero').wait_for()
         assert page.get_by_role('heading',name='Một chút cảm hứng cho Linh.').count()==1

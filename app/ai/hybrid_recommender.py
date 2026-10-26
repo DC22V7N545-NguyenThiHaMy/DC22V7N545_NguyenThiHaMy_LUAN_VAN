@@ -4,6 +4,7 @@ from sqlalchemy import select
 from app.models import Interaction, Setting, RecommendationLog
 from app.config import settings
 from app.repositories.catalog import active_products, serialize_product
+from .als import ALSRecommender
 from .collaborative_filtering import CollaborativeFiltering
 from .content_recommender import load_embeddings, content_scores
 from .preprocessing import scale_scores
@@ -19,8 +20,9 @@ def recommend(db, user=None, method='hybrid', k=12, gender=None, max_price=None)
     products = active_products(db)
     ids = [p.id for p in products]
     interactions = list(db.scalars(select(Interaction)))
-    cf = CollaborativeFiltering().fit(interactions, ids)
-    embeddings = load_embeddings(db, products) if method != 'collaborative' else {}
+    # 'als' reuses the CF slot: same score scaling, fallback and wording, different model.
+    cf = (ALSRecommender() if method == 'als' else CollaborativeFiltering()).fit(interactions, ids)
+    embeddings = load_embeddings(db, products) if method not in ('collaborative', 'als') else {}
     user_id = user.id if user else None
     history = [r for r in interactions if r.user_id == user_id]
     cf_scores = cf.scores(user_id)
@@ -32,7 +34,7 @@ def recommend(db, user=None, method='hybrid', k=12, gender=None, max_price=None)
     if not np.any(cf_scores):
         effective_alpha = 0.0
     status = 'personalized'
-    if method == 'collaborative':
+    if method in ('collaborative', 'als'):
         scores = scale_scores(cf_scores)
     elif method == 'clip':
         scores = scale_scores(clip_scores)

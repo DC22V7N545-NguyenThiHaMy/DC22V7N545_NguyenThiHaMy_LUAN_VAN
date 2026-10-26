@@ -16,7 +16,7 @@ if __name__=='__main__':
         page.screenshot(path=str(ROOT/'artifacts/mobile-first-screen-v2.png'))
         page.set_viewport_size({'width':1440,'height':1050})
         page.goto(BASE+'/tai-khoan',wait_until='networkidle')
-        page.locator('[data-demo="admin"]').click()
+        page.fill('#identifier','admin@velastyle.vn');page.fill('#password','Vela@12345')
         page.locator('#auth-form button[type=submit]').click()
         page.locator('.admin-head').wait_for()
         page.screenshot(path=str(ROOT/'artifacts/admin-dashboard-v2.png'),full_page=True)

@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from types import SimpleNamespace
 import numpy as np
 import pytest
+from app.ai.als import ALSRecommender
 from app.ai.collaborative_filtering import CollaborativeFiltering
 from app.ai.hybrid_recommender import combine_scores
 from app.ai.evaluation import ranking_metrics, temporal_split
@@ -20,6 +21,19 @@ def test_cf_learns_cooccurrence_and_cold_start():
 def test_cf_debounces_duplicate_events():
     model=CollaborativeFiltering().fit([row(1,1),row(1,1),row(1,1),row(1,2)],[1,2])
     assert model.matrix.toarray()[0,0]==1
+
+def test_als_ranks_cooccurring_item_and_handles_cold_start():
+    rows=[row(1,1),row(1,2),row(2,1),row(2,2),row(3,3),row(3,4),row(4,3),row(4,4),row(5,1)]
+    model=ALSRecommender().fit(rows,[1,2,3,4])
+    scores=model.scores(5)
+    assert scores.shape==(4,)
+    assert scores[1]>scores[2] and scores[1]>scores[3]
+    assert np.all(model.scores(999)==0)
+    np.testing.assert_allclose(scores,ALSRecommender().fit(rows,[1,2,3,4]).scores(5))
+
+def test_als_without_interactions_is_all_zero():
+    model=ALSRecommender().fit([],[1,2,3])
+    assert np.all(model.scores(1)==0)
 
 def test_hybrid_formula_and_normalization():
     actual=combine_scores(np.array([2,4,0]),np.array([.8,0,.4]),.6)

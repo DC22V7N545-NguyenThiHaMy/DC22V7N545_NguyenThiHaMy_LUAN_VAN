@@ -115,7 +115,8 @@ def delete_taxonomy(kind: str, item_id: int, db=Depends(get_db)):
 
 @router.get('/users')
 def users(db=Depends(get_db)):
-    return [{'id': u.id, 'name': u.full_name, 'email': u.email, 'role': u.role, 'simulated': u.simulated, 'created_at': u.created_at.isoformat()} for u in db.scalars(select(User).order_by(User.id))]
+    return [{'id': u.id, 'name': u.full_name, 'email': u.email, 'username': u.username, 'phone': u.phone, 'email_verified': u.email_verified,
+             'google_linked': bool(u.google_sub), 'role': u.role, 'simulated': u.simulated, 'created_at': u.created_at.isoformat()} for u in db.scalars(select(User).order_by(User.id))]
 
 @router.get('/orders')
 def orders(db=Depends(get_db)):

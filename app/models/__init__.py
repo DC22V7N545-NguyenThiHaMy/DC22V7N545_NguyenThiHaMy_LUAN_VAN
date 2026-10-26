@@ -11,6 +11,11 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     full_name: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(200), unique=True, index=True)
+    username: Mapped[str | None] = mapped_column(String(30), unique=True, index=True, nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=True)
+    google_sub: Mapped[str | None] = mapped_column(String(64), unique=True, index=True, nullable=True)
+    # Empty for accounts created through Google until the owner sets a password via reset.
     password_hash: Mapped[str] = mapped_column(Text)
     role: Mapped[str] = mapped_column(String(20), default='user')
     preferences: Mapped[str] = mapped_column(Text, default='{}')
@@ -22,6 +27,17 @@ class Session(Base):
     token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'), index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime)
+
+class EmailCode(Base):
+    __tablename__ = 'email_codes'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(200), index=True)
+    purpose: Mapped[str] = mapped_column(String(20))
+    code_hash: Mapped[str] = mapped_column(String(64))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
 
 class Category(Base):
     __tablename__ = 'categories'

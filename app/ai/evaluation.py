@@ -5,6 +5,7 @@ import numpy as np
 from sqlalchemy import select
 from app.models import Interaction
 from app.repositories.catalog import active_products
+from .als import ALSRecommender
 from .collaborative_filtering import CollaborativeFiltering
 from .content_recommender import load_embeddings, content_scores
 from .hybrid_recommender import combine_scores, get_alpha
@@ -49,8 +50,9 @@ def evaluate(db, k=10):
     if len(vectors) != len(products):
         raise ValueError('Cần tạo đầy đủ embedding CLIP trước khi so sánh công bằng cả ba phương pháp.')
     model = CollaborativeFiltering().fit(train, ids)
+    als_model = ALSRecommender().fit(train, ids)
     alpha = get_alpha(db)
-    metrics = {method: [] for method in ['collaborative', 'clip', 'hybrid']}
+    metrics = {method: [] for method in ['collaborative', 'als', 'clip', 'hybrid']}
     coverage = {method: set() for method in metrics}
     latency = {method: [] for method in metrics}
     valid = set(ids)
@@ -62,6 +64,8 @@ def evaluate(db, k=10):
             start = time.perf_counter()
             if method == 'collaborative':
                 scores = scale_scores(model.scores(uid))
+            elif method == 'als':
+                scores = scale_scores(als_model.scores(uid))
             elif method == 'clip':
                 scores = scale_scores(content_scores(ids, vectors, train, uid))
             else:

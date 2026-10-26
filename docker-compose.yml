@@ -1,0 +1,17 @@
+# docker compose up --build  ->  http://localhost:8010
+services:
+  web:
+    build: .
+    ports:
+      - "8010:8010"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - velastyle-data:/app/data
+      - velastyle-uploads:/app/app/static/uploads
+    restart: unless-stopped
+
+volumes:
+  velastyle-data:
+  velastyle-uploads:

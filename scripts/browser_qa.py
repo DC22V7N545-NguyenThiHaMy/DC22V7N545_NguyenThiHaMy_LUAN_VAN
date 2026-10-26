@@ -27,7 +27,7 @@ if __name__ == '__main__':
         assert page.locator('.product-card').count()==1
         page.screenshot(path=str(OUTPUT/'catalog-search.png'),full_page=True)
         page.goto('http://127.0.0.1:8010/tai-khoan',wait_until='networkidle')
-        page.locator('[data-demo="user"]').click()
+        page.fill('#identifier','linh@velastyle.vn');page.fill('#password','Vela@12345')
         page.locator('#auth-form button[type=submit]').click()
         page.get_by_role('heading',name='Một chút cảm hứng cho Linh.').wait_for()
         page.screenshot(path=str(OUTPUT/'recommendations.png'),full_page=True)

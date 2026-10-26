@@ -1,23 +1,55 @@
 import re
 from typing import Literal
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-class Register(BaseModel):
-    full_name: str = Field(min_length=2, max_length=100)
+def clean_email(value):
+    value = value.strip().lower()
+    if not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', value):
+        raise ValueError('Email không hợp lệ')
+    return value
+
+class EmailIn(BaseModel):
     email: str = Field(max_length=200)
-    password: str = Field(min_length=8, max_length=128)
 
     @field_validator('email')
     @classmethod
     def email_valid(cls, value):
-        value = value.strip().lower()
-        if not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', value):
-            raise ValueError('Email không hợp lệ')
-        return value
+        return clean_email(value)
+
+class NewPassword(BaseModel):
+    password: str = Field(min_length=8, max_length=128)
+    confirm_password: str = Field(max_length=128)
+
+    @model_validator(mode='after')
+    def passwords_match(self):
+        if self.password != self.confirm_password:
+            raise ValueError('Mật khẩu nhập lại không khớp')
+        return self
+
+class Register(EmailIn, NewPassword):
+    full_name: str = Field(min_length=2, max_length=100)
+    username: str = Field(pattern=r'^[a-zA-Z0-9_.]{3,30}$')
+    phone: str = Field(pattern=r'^0\d{9,10}$')
+
+    @field_validator('username')
+    @classmethod
+    def username_lower(cls, value):
+        return value.lower()
 
 class Login(BaseModel):
-    email: str = Field(max_length=200)
+    # `email` is kept so older clients keep working; either field may hold an email or a username.
+    identifier: str = Field(default='', max_length=200)
+    email: str = Field(default='', max_length=200)
     password: str = Field(max_length=128)
+
+class VerifyEmail(EmailIn):
+    code: str = Field(pattern=r'^\d{6}$')
+
+class ResendCode(EmailIn):
+    purpose: Literal['verify', 'reset'] = 'verify'
+
+class ResetPassword(EmailIn, NewPassword):
+    code: str = Field(pattern=r'^\d{6}$')
 
 class Profile(BaseModel):
     full_name: str = Field(min_length=2, max_length=100)

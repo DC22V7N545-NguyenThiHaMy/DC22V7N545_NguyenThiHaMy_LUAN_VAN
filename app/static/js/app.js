@@ -5,7 +5,7 @@ const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money = n => new Intl.NumberFormat('vi-VN').format(n || 0) + '₫';
 const date = value => new Date(value.endsWith('Z') ? value : value + 'Z').toLocaleDateString('vi-VN', {timeZone:'Asia/Ho_Chi_Minh'});
-const state = {user:null, favorites:new Set(), cart:{items:[],count:0,total:0,shipping:0}, categories:[],brands:[], homeTab:'Tất cả',authMode:'login',method:'hybrid', pageToken:0, modalProduct:null, selectedVariant:null, file:null, adminProducts:[], pollTimer:null};
+const state = {user:null, favorites:new Set(), cart:{items:[],count:0,total:0,shipping:0}, categories:[],brands:[], homeTab:'Tất cả',authMode:'login',authEmail:'',resendAt:0,resendTimer:null,providers:{google:false,email_delivery:true},method:'hybrid', pageToken:0, modalProduct:null, selectedVariant:null, file:null, adminProducts:[], pollTimer:null};
 const paths = {
   search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/>',
   user:'<circle cx="12" cy="7.5" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/>',
@@ -43,8 +43,8 @@ async function api(url, options={}) {
   const res=await fetch('/api'+url,config);
   const data=await res.json().catch(()=>({detail:'Không thể kết nối máy chủ.'}));
   if (!res.ok) {
-    const message=Array.isArray(data.detail)?data.detail.map(x=>`${x.loc?.at(-1)||''}: ${x.msg}`).join(' · '):data.detail;
-    const err=new Error(message||'Có lỗi xảy ra. Vui lòng thử lại.');err.status=res.status;throw err;
+    const message=Array.isArray(data.detail)?data.detail.map(x=>`${x.loc?.at(-1)||''}: ${x.msg}`).join(' · '):data.detail?.message||data.detail;
+    const err=new Error(message||'Có lỗi xảy ra. Vui lòng thử lại.');err.status=res.status;err.detail=data.detail;throw err;
   }
   return data;
 }
@@ -96,11 +96,65 @@ async function forYouPage() {
   const data=await api(`/recommendations/${method}?k=18&gender=${encodeURIComponent(gender)}${max?'&max_price='+max:''}`);
   return atelierForYou(data,{method,gender,max});
 }
+const authField=(id,name,label,attrs)=>`<div class="field"><label for="${id}">${label}</label><input id="${id}" name="${name}" ${attrs}></div>`;
+const googleIcon='<svg class="google-mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" stroke="none" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8Z"/><path fill="#34A853" stroke="none" d="M12 23c3 0 5.5-1 7.2-2.7l-3.5-2.7c-1 .7-2.2 1-3.7 1-2.9 0-5.3-1.9-6.2-4.5H2.2v2.8A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" stroke="none" d="M5.8 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.2a11 11 0 0 0 0 9.8l3.6-2.8Z"/><path fill="#EA4335" stroke="none" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.1-3.1A11 11 0 0 0 2.2 7.1l3.6 2.8C6.7 7.3 9.1 5.4 12 5.4Z"/></svg>';
 function authMarkup() {
-  const register=state.authMode==='register';
-  return `<section class="container page-space">${breadcrumb('Tài khoản')}<div class="auth-page"><div class="auth-art"><img src="/static/images/hero-beige.jpg" alt="Phong cách thanh lịch của VELASTYLE" style="object-position:62% center"><h2>Một tủ đồ.<br>Rất nhiều phiên bản<br>của chính bạn.</h2></div><div class="auth-form"><span class="small-label">CHÀO MỪNG ĐẾN VELASTYLE</span><h1>${register?'Bắt đầu câu chuyện mới.':'Thật vui được gặp lại bạn.'}</h1><p>${register?'Một tài khoản, cả thế giới cảm hứng dành riêng cho bạn.':'Đăng nhập để tìm lại những thiết kế bạn yêu.'}</p><div class="auth-tabs"><button class="${!register?'active':''}" data-auth-mode="login">Đăng nhập</button><button class="${register?'active':''}" data-auth-mode="register">Đăng ký</button></div><form id="auth-form">${register?'<div class="field"><label for="full-name">Tên của bạn</label><input id="full-name" name="full_name" required minlength="2" maxlength="100" placeholder="Chúng mình nên gọi bạn là gì?" autocomplete="name"></div>':''}<div class="field"><label for="email">Email</label><input type="email" id="email" name="email" required placeholder="ban@example.com" autocomplete="email" maxlength="200"></div><div class="field"><label for="password">Mật khẩu</label><input type="password" id="password" name="password" required ${register?'minlength="8"':''} maxlength="128" placeholder="${register?'Ít nhất 8 ký tự':'Mật khẩu của bạn'}" autocomplete="${register?'new-password':'current-password'}"></div><div class="form-error"></div><div class="form-actions"><button type="submit" class="button primary wide">${register?'Tạo tài khoản':'Đăng nhập'} ${icon('arrow')}</button></div></form><p class="form-hint" style="margin-top:17px">Khi tiếp tục, bạn đồng ý với <a href="/thong-tin/bao-mat" data-link style="text-decoration:underline">chính sách quyền riêng tư</a>.</p><div class="demo-note">Trải nghiệm với tài khoản mẫu<br><button data-demo="user">Khách hàng: linh@velastyle.vn</button><br><button data-demo="admin">Quản trị: admin@velastyle.vn</button><br>Mật khẩu dùng thử: <b>Vela@12345</b></div></div></div></section>`;
+  const mode=state.authMode,register=mode==='register',code=mode==='verify'||mode==='reset';
+  const copy={login:['Thật vui được gặp lại bạn.','Đăng nhập để tìm lại những thiết kế bạn yêu.','Đăng nhập'],register:['Bắt đầu câu chuyện mới.','Một tài khoản, cả thế giới cảm hứng dành riêng cho bạn.','Tạo tài khoản'],
+    verify:['Xác nhận email của bạn.',`Chúng mình đã gửi mã 6 số tới <b>${esc(state.authEmail)}</b>. Mã có hiệu lực trong 10 phút.`,'Xác nhận và đăng nhập'],
+    forgot:['Quên mật khẩu?','Nhập email đã đăng ký, chúng mình sẽ gửi mã để bạn đặt mật khẩu mới.','Gửi mã đặt lại'],
+    reset:['Đặt mật khẩu mới.',`Nhập mã 6 số đã gửi tới <b>${esc(state.authEmail)}</b> và mật khẩu mới của bạn.`,'Lưu mật khẩu mới']}[mode];
+  const password=(id,name,label)=>authField(id,name,label,'type="password" required minlength="8" maxlength="128" placeholder="Ít nhất 8 ký tự" autocomplete="new-password"');
+  const fields={
+    login:authField('identifier','identifier','Email hoặc tên đăng nhập','required maxlength="200" placeholder="ban@example.com hoặc ten_dang_nhap" autocomplete="username"')+authField('password','password','Mật khẩu','type="password" required maxlength="128" placeholder="Mật khẩu của bạn" autocomplete="current-password"'),
+    register:authField('full-name','full_name','Tên của bạn','required minlength="2" maxlength="100" placeholder="Chúng mình nên gọi bạn là gì?" autocomplete="name"')
+      +authField('username','username','Tên đăng nhập','required pattern="[A-Za-z0-9_.]{3,30}" maxlength="30" placeholder="3–30 ký tự: chữ, số, dấu _ hoặc ." autocomplete="username"')
+      +authField('email','email','Email','type="email" required maxlength="200" placeholder="ban@example.com" autocomplete="email"')
+      +authField('phone','phone','Số điện thoại','type="tel" required pattern="0[0-9]{9,10}" maxlength="11" placeholder="0901234567" autocomplete="tel"')
+      +password('password','password','Mật khẩu')+password('confirm-password','confirm_password','Nhập lại mật khẩu'),
+    verify:authField('code','code','Mã xác nhận','required pattern="[0-9]{6}" maxlength="6" inputmode="numeric" placeholder="6 chữ số" autocomplete="one-time-code"'),
+    forgot:authField('email','email','Email','type="email" required maxlength="200" placeholder="ban@example.com" autocomplete="email"'),
+    reset:authField('code','code','Mã đặt lại','required pattern="[0-9]{6}" maxlength="6" inputmode="numeric" placeholder="6 chữ số" autocomplete="one-time-code"')
+      +password('password','password','Mật khẩu mới')+password('confirm-password','confirm_password','Nhập lại mật khẩu mới')}[mode];
+  const tabs=mode==='login'||register?`<div class="auth-tabs"><button class="${!register?'active':''}" data-auth-mode="login">Đăng nhập</button><button class="${register?'active':''}" data-auth-mode="register">Đăng ký</button></div>`:'';
+  const google=(mode==='login'||register)&&state.providers.google?`<div class="auth-divider"><span>hoặc</span></div><a class="button outline wide google-button" href="/api/auth/google/start">${googleIcon} ${register?'Đăng ký':'Đăng nhập'} bằng Google</a>`:'';
+  const devNote=code&&!state.providers.email_delivery?'<p class="auth-note">Máy chủ chưa cấu hình SMTP (chế độ phát triển): mã được ghi trong cửa sổ đang chạy server thay vì gửi email.</p>':'';
+  const links=code?'<div class="auth-links"><button type="button" id="resend-code" data-action="resend-code">Gửi lại mã</button><button type="button" data-auth-mode="login">Quay lại đăng nhập</button></div>'
+    :mode==='forgot'?'<div class="auth-links"><button type="button" data-auth-mode="login">Quay lại đăng nhập</button></div>'
+    :mode==='login'?'<div class="auth-links"><button type="button" data-auth-mode="forgot">Quên mật khẩu?</button></div>':'';
+  if(code)setTimeout(()=>{updateResend();if(!state.resendTimer)state.resendTimer=setInterval(updateResend,1000);});
+  return `<section class="container page-space">${breadcrumb('Tài khoản')}<div class="auth-page"><div class="auth-art"><img src="/static/images/hero-beige.jpg" alt="Phong cách thanh lịch của VELASTYLE" style="object-position:62% center"><h2>Một tủ đồ.<br>Rất nhiều phiên bản<br>của chính bạn.</h2></div><div class="auth-form"><span class="small-label">CHÀO MỪNG ĐẾN VELASTYLE</span><h1>${copy[0]}</h1><p>${copy[1]}</p>${tabs}${devNote}<form id="auth-form">${fields}<div class="form-error"></div><div class="form-actions"><button type="submit" class="button primary wide">${copy[2]} ${icon('arrow')}</button></div></form>${links}${google}${mode==='login'||register?'<p class="form-hint" style="margin-top:17px">Khi tiếp tục, bạn đồng ý với <a href="/thong-tin/bao-mat" data-link style="text-decoration:underline">chính sách quyền riêng tư</a>.</p>':''}</div></div></section>`;
 }
-function accountSidebar() {return `<aside class="account-side"><div class="avatar">${esc(state.user.full_name[0])}</div><h3>${esc(state.user.full_name)}</h3><p>${esc(state.user.email)}</p><nav><a href="/tai-khoan" data-link>${icon('user')} Hồ sơ & sở thích</a><a href="/don-hang" data-link>${icon('box')} Đơn hàng của tôi</a><a href="/yeu-thich" data-link>${icon('heart')} Thiết kế yêu thích</a><a href="/danh-rieng-cho-ban" data-link>${icon('sparkles')} Dành riêng cho bạn</a>${state.user.role==='admin'?`<a href="/quan-tri" data-link>${icon('grid')} Quản trị cửa hàng</a>`:''}<button data-action="logout">${icon('logout')} Đăng xuất</button></nav></aside>`;}
+function updateResend() {
+  const button=$('#resend-code');if(!button){clearInterval(state.resendTimer);state.resendTimer=null;return;}
+  const left=Math.ceil((state.resendAt-Date.now())/1000);button.disabled=left>0;button.textContent=left>0?`Gửi lại mã sau ${left} giây`:'Gửi lại mã';
+}
+async function startCodeStep(email,wait,mode) {state.authEmail=email;state.authMode=mode;state.resendAt=Date.now()+(wait||0)*1000;await render();window.scrollTo(0,0);$('#code')?.focus();}
+async function submitAuth(values) {
+  const mode=state.authMode;
+  if((mode==='register'||mode==='reset')&&values.password!==values.confirm_password)throw new Error('Mật khẩu nhập lại không khớp.');
+  try{
+    if(mode==='register'){const result=await api('/auth/register',{method:'POST',body:values});toast('Đã gửi mã xác nhận tới email của bạn.');return startCodeStep(result.email,result.resend_after,'verify');}
+    if(mode==='forgot'){const result=await api('/auth/forgot-password',{method:'POST',body:values});toast(result.message);return startCodeStep(values.email.trim().toLowerCase(),result.resend_after,'reset');}
+    if(mode==='login')await api('/auth/login',{method:'POST',body:values});
+    else if(mode==='verify')await api('/auth/verify-email',{method:'POST',body:{email:state.authEmail,code:values.code}});
+    else await api('/auth/reset-password',{method:'POST',body:{...values,email:state.authEmail}});
+  }catch(err){
+    // Unverified account: move straight to the code step instead of a dead end.
+    if(err.detail?.code==='email_unverified'){toast(err.message);return startCodeStep(err.detail.email,0,'verify');}
+    throw err;
+  }
+  await syncUser();state.authMode='login';
+  toast({login:'Chào mừng bạn trở lại.',verify:'Email đã được xác nhận. Chào mừng bạn đến với VELASTYLE.',reset:'Đã đặt mật khẩu mới. Các phiên đăng nhập cũ đã được đăng xuất.'}[mode]);
+  const back=sessionStorage.getItem('vela_return');sessionStorage.removeItem('vela_return');go(back?.startsWith('/')&&!back.startsWith('//')?back:state.user.role==='admin'?'/quan-tri':'/danh-rieng-cho-ban');
+}
+function oauthNotice() {
+  const params=new URLSearchParams(location.search),result=params.get('google');if(!result)return;
+  params.delete('google');history.replaceState(null,'',location.pathname+(params.size?'?'+params:''));
+  const messages={ok:'Đã đăng nhập bằng Google.',cancelled:'Bạn đã hủy đăng nhập bằng Google.',state:'Phiên đăng nhập Google đã hết hạn hoặc không hợp lệ. Vui lòng thử lại.',unverified:'Tài khoản Google này chưa xác minh email.',error:'Chưa kết nối được Google. Vui lòng thử lại sau.'};
+  toast(messages[result]||messages.error,result!=='ok');
+}
+function accountSidebar() {return `<aside class="account-side"><div class="avatar">${esc(state.user.full_name[0])}</div><h3>${esc(state.user.full_name)}</h3><p>${esc(state.user.email)}</p>${state.user.username?`<p>@${esc(state.user.username)}</p>`:''}<nav><a href="/tai-khoan" data-link>${icon('user')} Hồ sơ & sở thích</a><a href="/don-hang" data-link>${icon('box')} Đơn hàng của tôi</a><a href="/yeu-thich" data-link>${icon('heart')} Thiết kế yêu thích</a><a href="/danh-rieng-cho-ban" data-link>${icon('sparkles')} Dành riêng cho bạn</a>${state.user.role==='admin'?`<a href="/quan-tri" data-link>${icon('grid')} Quản trị cửa hàng</a>`:''}<button data-action="logout">${icon('logout')} Đăng xuất</button></nav></aside>`;}
 async function accountPage() {
   if(!state.user)return authMarkup();
   const p=state.user.preferences;const history=await api('/history');
@@ -141,7 +195,7 @@ async function submitImage(file) {
 async function infoPage(slug) {const p=await api('/info/'+encodeURIComponent(slug));return `<section class="info-page">${breadcrumb(p.title)}<span class="small-label">VELASTYLE, VỚI TẤT CẢ QUAN TÂM</span><h1>${esc(p.title)}</h1><p>${esc(p.content)}</p><a class="underlined" href="/san-pham" data-link style="margin-top:35px">Trở lại với cảm hứng ${icon('arrow')}</a></section>`;}
 
 const adminNav=[['','Tổng quan','grid'],['san-pham','Sản phẩm','bag'],['danh-muc','Danh mục','grid'],['thuong-hieu','Thương hiệu','box'],['nguoi-dung','Người dùng','user'],['don-hang','Đơn hàng','box'],['tuong-tac','Tương tác','heart'],['ai','Gợi ý & mô hình AI','sparkles'],['danh-gia','Đánh giá mô hình','chart'],['dataset','Dữ liệu & dataset','database'],['cai-dat','Cài đặt','settings']];
-const methodLabels={collaborative:'Lọc cộng tác',clip:'CLIP',hybrid:'Hybrid'};
+const methodLabels={collaborative:'Lọc cộng tác',als:'ALS (phân rã ma trận)',clip:'CLIP',hybrid:'Hybrid'};
 const eventLabels={view:'Lượt xem',favorite:'Yêu thích',cart:'Thêm giỏ',purchase:'Mua mô phỏng'};
 function adminShell(section,content) {return `<div class="admin-wrapper"><aside class="admin-sidebar"><span class="small-label">VELASTYLE / QUẢN TRỊ</span><nav>${adminNav.map(([path,label,name])=>`<a href="/quan-tri${path?'/'+path:''}" data-link class="${section===path?'active':''}">${icon(name)} ${label}</a>`).join('')}</nav><a href="/" data-link class="underlined" style="margin:24px 13px 0">Về cửa hàng ↗</a></aside><section class="admin-main">${content}</section></div>`;}
 function adminHead(title,description,action='') {return `<div class="admin-head"><div><h1>${title}</h1><p>${description}</p></div>${action}</div>`;}
@@ -233,6 +287,7 @@ document.addEventListener('click',async e=>{
     else if(action==='back-top')window.scrollTo({top:0,behavior:'smooth'});
     else if(action==='toggle-filters'){const open=$('#filter-sidebar').classList.toggle('mobile-open');studio.filtersOpen=open;document.body.classList.toggle('filters-open',open);el.setAttribute('aria-expanded',String(open));}
     else if(action==='clear-filters')go('/san-pham');
+    else if(action==='resend-code'){el.disabled=true;try{const result=await api('/auth/resend-code',{method:'POST',body:{email:state.authEmail,purpose:state.authMode==='reset'?'reset':'verify'}});state.resendAt=Date.now()+result.resend_after*1000;toast(result.message);}finally{updateResend();}}
     else if(action==='logout'){await api('/auth/logout',{method:'POST'});await syncUser();toast('Hẹn gặp lại bạn, với thật nhiều cảm hứng mới.');go('/');}
     else if(action==='admin-add-product')productForm();
     if(el.dataset.homeTab)await changeHomeTab(el.dataset.homeTab);
@@ -241,7 +296,6 @@ document.addEventListener('click',async e=>{
     if(el.dataset.variant){state.selectedVariant=+el.dataset.variant;studio.quantity=1;updateDetailQuantity();$$('[data-variant]').forEach(b=>b.classList.toggle('active',+b.dataset.variant===state.selectedVariant));}
     if(el.dataset.addCart){if(!requireLogin())return;if(!state.selectedVariant){toast('Chọn một kích thước vừa vặn với bạn nhé.',true);return;}el.disabled=true;try{state.cart=await api('/cart',{method:'POST',body:{variant_id:state.selectedVariant,quantity:studio.quantity||1}});badges();closeModal();toast('Một lựa chọn thật đẹp. Đã thêm vào giỏ hàng.');}finally{el.disabled=false;}}
     if(el.dataset.authMode){state.authMode=el.dataset.authMode;render();}
-    if(el.dataset.demo){if(state.authMode!=='login'){state.authMode='login';await render();}$('#email').value=el.dataset.demo==='admin'?'admin@velastyle.vn':'linh@velastyle.vn';$('#password').value='Vela@12345';$('#auth-form button[type=submit]').focus();}
     if(el.dataset.page)updateQuery({page:el.dataset.page});
     if(el.dataset.filterColor){const params=new URLSearchParams(location.search);updateQuery({color:params.get('color')===el.dataset.filterColor?'':el.dataset.filterColor,page:''});}
     if(el.dataset.method)updateQuery({method:el.dataset.method});
@@ -277,7 +331,7 @@ document.addEventListener('submit',async e=>{
     if(form.id==='catalog-search'){updateQuery({q:values.q.trim(),page:''});return;}
     if(submit)submit.disabled=true;
     if(form.id==='auth-form'){
-      await api('/auth/'+state.authMode,{method:'POST',body:values});await syncUser();toast(state.authMode==='register'?'Chào mừng bạn đến với VELASTYLE.':'Chào mừng bạn trở lại.');const back=sessionStorage.getItem('vela_return');sessionStorage.removeItem('vela_return');go(back?.startsWith('/')&&!back.startsWith('//')?back:state.user.role==='admin'?'/quan-tri':'/danh-rieng-cho-ban');
+      await submitAuth(values);
     }else if(form.id==='profile-form'){state.user=await api('/profile',{method:'PUT',body:{...values,budget:+values.budget}});toast('Đã lưu sở thích. Chúng mình hiểu bạn thêm một chút.');render();}
     else if(form.id==='review-form'){await api('/products/'+form.dataset.id+'/reviews',{method:'POST',body:{rating:+values.rating,comment:values.comment}});toast('Cảm ơn bạn đã chia sẻ cảm nhận.');render();}
     else if(form.id==='checkout-form'){
@@ -298,4 +352,4 @@ document.addEventListener('keydown',e=>{
 });
 window.addEventListener('popstate',()=>{closeModal();render();});
 icons();
-(async()=>{try{await Promise.all([syncUser(),refreshTaxonomy()]);await render();}catch(err){$('#main').innerHTML=`<section class="container page-space">${empty('Chưa kết nối được tủ đồ',err.message,'Thử lại','/','return')}</section>`;}})();
+(async()=>{try{await Promise.all([syncUser(),refreshTaxonomy(),api('/auth/providers').then(p=>{state.providers=p;}).catch(()=>{})]);oauthNotice();await render();}catch(err){$('#main').innerHTML=`<section class="container page-space">${empty('Chưa kết nối được tủ đồ',err.message,'Thử lại','/','return')}</section>`;}})();

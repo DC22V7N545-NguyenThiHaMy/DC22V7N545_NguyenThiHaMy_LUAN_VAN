@@ -1,65 +1,25 @@
-import hashlib
 import io
 import json
 from pathlib import Path
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File, Query
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from PIL import Image, UnidentifiedImageError
 from sqlalchemy import select, func, delete, update, or_
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from app.database import get_db
-from app.models import (User, Session as AuthSession, Product, ProductVariant, Category, Brand,
+from app.models import (Product, ProductVariant, Category, Brand,
                         Review, Interaction, Favorite, Cart, CartItem, Order, OrderItem)
 from app.schemas import *
-from app.services.auth import current_user, optional_user, admin_user, start_session, hasher, verify_password, public_user, throttle
+from app.services.auth import current_user, optional_user, admin_user, public_user
 from app.services.interactions import record
 from app.repositories.catalog import serialize_product, active_products
-from app.config import ROOT
+from app.config import ROOT, settings
 
 router = APIRouter(prefix='/api')
 
 @router.get('/health')
 def health():
     return {'status': 'ok'}
-
-@router.post('/auth/register', status_code=201)
-def register(payload: Register, response: Response, request: Request, db: Session = Depends(get_db)):
-    throttle(request)
-    if db.scalar(select(User.id).where(User.email == payload.email)):
-        raise HTTPException(409, 'Email này đã được đăng ký.')
-    user = User(full_name=payload.full_name.strip(), email=payload.email, password_hash=hasher.hash(payload.password))
-    db.add(user)
-    try:
-        db.flush()
-        start_session(db, user, response)
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(409, 'Email này đã được đăng ký.')
-    return public_user(user)
-
-@router.post('/auth/login')
-def login(payload: Login, response: Response, request: Request, db: Session = Depends(get_db)):
-    throttle(request)
-    user = db.scalar(select(User).where(User.email == payload.email.strip().lower()))
-    valid = verify_password(payload.password, user.password_hash if user else None)
-    if not user or not valid:
-        raise HTTPException(401, 'Email hoặc mật khẩu chưa chính xác.')
-    start_session(db, user, response)
-    return public_user(user)
-
-@router.post('/auth/logout')
-def logout(request: Request, response: Response, db: Session = Depends(get_db)):
-    token = request.cookies.get('vela_session')
-    if token:
-        db.execute(delete(AuthSession).where(AuthSession.token_hash == hashlib.sha256(token.encode()).hexdigest()))
-        db.commit()
-    response.delete_cookie('vela_session', path='/')
-    return {'ok': True}
-
-@router.get('/auth/me')
-def me(user=Depends(optional_user)):
-    return public_user(user) if user else None
 
 @router.put('/profile')
 def profile(payload: Profile, user=Depends(current_user), db: Session = Depends(get_db)):
@@ -265,14 +225,15 @@ def similar(product_id: int, k: int = Query(6, ge=1, le=24), db: Session = Depen
 @router.get('/recommendations/{method}')
 def recommendations(method: str, k: int = Query(12, ge=1, le=48), gender: str = '', max_price: int | None = None, user=Depends(optional_user), db: Session = Depends(get_db)):
     from app.ai.hybrid_recommender import recommend
-    if method not in ['hybrid', 'collaborative', 'clip']: raise HTTPException(404, 'Phương pháp không tồn tại.')
+    if method not in ['hybrid', 'collaborative', 'als', 'clip']: raise HTTPException(404, 'Phương pháp không tồn tại.')
     return recommend(db, user, method, k, gender or None, max_price)
 
 async def read_image(file):
     if file.content_type not in ['image/jpeg', 'image/png', 'image/webp']:
         raise HTTPException(415, 'Vui lòng chọn ảnh JPG, PNG hoặc WebP.')
-    data = await file.read(5 * 1024 * 1024 + 1)
-    if len(data) > 5 * 1024 * 1024: raise HTTPException(413, 'Ảnh tối đa 5 MB.')
+    limit = settings.max_upload_mb * 1024 * 1024
+    data = await file.read(limit + 1)
+    if len(data) > limit: raise HTTPException(413, f'Ảnh tối đa {settings.max_upload_mb} MB.')
     try:
         image = Image.open(io.BytesIO(data))
         if image.width * image.height > 25000000: raise HTTPException(413, 'Độ phân giải ảnh quá lớn (tối đa 25 megapixel).')
@@ -294,7 +255,7 @@ async def search_image(file: UploadFile = File(...), user=Depends(current_user),
         logging.exception('CLIP image search failed')
         raise HTTPException(503, 'CLIP chưa sẵn sàng. Quản trị viên có thể kiểm tra mô hình trong khu vực AI.')
     if result is None: raise HTTPException(503, 'Chưa có embedding CLIP. Vui lòng tạo đặc trưng trong trang quản trị AI trước.')
-    return {'items': result, 'method': 'CLIP image cosine similarity'}
+    return {'items': result, 'method': 'CLIP image cosine similarity', 'model': settings.clip_model}
 
 @router.post('/admin/uploads')
 async def upload_image(file: UploadFile = File(...), user=Depends(admin_user)):

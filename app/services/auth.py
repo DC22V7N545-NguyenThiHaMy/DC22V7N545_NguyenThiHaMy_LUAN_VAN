@@ -6,7 +6,7 @@ from datetime import timedelta
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError, InvalidHashError
 from fastapi import Depends, HTTPException, Request, Response
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session as DBSession
 from app.database import get_db
 from app.models import User, Session, now
@@ -22,7 +22,7 @@ def throttle(request: Request):
     cutoff = time.monotonic() - 60
     while attempts and attempts[0] < cutoff:
         attempts.popleft()
-    if len(attempts) >= 20:
+    if len(attempts) >= settings.rate_limit_per_minute:
         raise HTTPException(429, 'Bạn thao tác quá nhanh. Vui lòng thử lại sau một phút.')
     attempts.append(time.monotonic())
 
@@ -34,9 +34,9 @@ def verify_password(password, encoded):
 
 def start_session(db, user, response: Response):
     token = secrets.token_urlsafe(48)
-    db.add(Session(token_hash=hashlib.sha256(token.encode()).hexdigest(), user_id=user.id, expires_at=now() + timedelta(days=7)))
+    db.add(Session(token_hash=hashlib.sha256(token.encode()).hexdigest(), user_id=user.id, expires_at=now() + timedelta(days=settings.session_days)))
     db.commit()
-    response.set_cookie('vela_session', token, httponly=True, secure=settings.cookie_secure, samesite='lax', max_age=604800, path='/')
+    response.set_cookie('vela_session', token, httponly=True, secure=settings.cookie_secure, samesite=settings.cookie_samesite, max_age=settings.session_days * 86400, path='/')
 
 def optional_user(request: Request, db: DBSession = Depends(get_db)):
     token = request.cookies.get('vela_session')
@@ -57,6 +57,11 @@ def admin_user(user=Depends(current_user)):
         raise HTTPException(403, 'Chỉ quản trị viên được sử dụng chức năng này.')
     return user
 
+def revoke_sessions(db, user_id):
+    db.execute(delete(Session).where(Session.user_id == user_id))
+
 def public_user(user):
     import json
-    return {'id': user.id, 'full_name': user.full_name, 'email': user.email, 'role': user.role, 'preferences': json.loads(user.preferences)}
+    return {'id': user.id, 'full_name': user.full_name, 'email': user.email, 'username': user.username, 'phone': user.phone,
+            'role': user.role, 'google_linked': bool(user.google_sub), 'has_password': bool(user.password_hash),
+            'preferences': json.loads(user.preferences)}

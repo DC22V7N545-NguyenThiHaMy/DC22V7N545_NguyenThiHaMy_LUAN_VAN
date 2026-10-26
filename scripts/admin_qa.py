@@ -12,7 +12,7 @@ if __name__=='__main__':
         errors=[]
         page.on('pageerror',lambda err:errors.append(str(err)))
         page.goto('http://127.0.0.1:8010/tai-khoan',wait_until='networkidle')
-        page.locator('[data-demo="admin"]').click()
+        page.fill('#identifier','admin@velastyle.vn');page.fill('#password','Vela@12345')
         page.locator('#auth-form button[type=submit]').click()
         page.locator('.admin-head').wait_for()
         page.goto('http://127.0.0.1:8010/quan-tri/ai',wait_until='networkidle')
@@ -45,7 +45,7 @@ if __name__=='__main__':
         page.get_by_role('button',name='Đăng xuất',exact=True).click()
         page.locator('.hero').wait_for()
         page.goto('http://127.0.0.1:8010/tai-khoan',wait_until='networkidle')
-        page.locator('[data-demo="user"]').click()
+        page.fill('#identifier','linh@velastyle.vn');page.fill('#password','Vela@12345')
         page.locator('#auth-form button[type=submit]').click()
         page.locator('.for-you-hero').wait_for()
         page.goto('http://127.0.0.1:8010/gio-hang',wait_until='networkidle')

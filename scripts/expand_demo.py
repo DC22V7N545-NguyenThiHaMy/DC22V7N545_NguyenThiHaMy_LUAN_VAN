@@ -1,12 +1,11 @@
 import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from app.database import Base,engine,SessionLocal
-from app.services.migrations import migrate
+from app.database import engine,SessionLocal
+from app.services.migrations import upgrade_database
 from app.services.demo_data import expand_demo
 
 if __name__=='__main__':
-    Base.metadata.create_all(engine)
-    migrate(engine)
+    upgrade_database(engine)
     with SessionLocal() as db:
         print(expand_demo(db))

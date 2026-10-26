@@ -2,6 +2,41 @@
 
 Ngày kiểm tra: 22/10/2026 (Asia/Saigon).
 
+## Đánh giá trên dữ liệu tương tác thực — 26/10/2026
+
+Nguồn: Amazon Reviews 2023, mục Amazon_Fashion (Hou và cộng sự, arXiv:2403.03952); quy trình và giới hạn: `docs/guides/real-data-experiment.md`. Chạy bằng `scripts/real_data_experiment.py`; kết quả đầy đủ: `artifacts/real-data-eval-amazon-fashion.json`. Không ghi vào `velastyle.db`.
+
+- Lọc 5-core còn 0 bản ghi, 4-core còn 513 người dùng; dùng **3-core: 2.223 người dùng, 2.245 sản phẩm, 12.490 tương tác** (mật độ 0,25%, 15/07/2012–30/04/2023). Ảnh 2.244/2.245. Giao thức leave-last-item-out theo thời gian; 10.267 tương tác train.
+
+| K = 10 | Precision | Hit Rate | NDCG (KTC 95%) | Coverage |
+| --- | --- | --- | --- | --- |
+| Popularity | 0,0062 | 0,062 | 0,031 [0,026; 0,037] | 0,008 |
+| Random | 0,0002 | 0,002 | 0,001 [0,000; 0,002] | 1,000 |
+| CF | 0,0095 | 0,095 | 0,054 [0,046; 0,062] | 0,935 |
+| CLIP | 0,0076 | 0,076 | 0,042 [0,036; 0,048] | 0,742 |
+| Hybrid α = 0,5 | 0,0115 | 0,115 | 0,067 [0,058; 0,075] | 0,909 |
+
+Hybrid − CF, NDCG@10: +0,013, KTC 95% [+0,008; +0,018] (bootstrap 2.000 lần theo người dùng). α tốt nhất theo NDCG@10 là 0,4 (chọn trên tập kiểm tra, chỉ mang tính khảo sát). Trái với dữ liệu mô phỏng bên dưới, nơi CF > Hybrid và CLIP < Random.
+
+## Chạy lại pipeline AI — 25/10/2026
+
+DB trước đó không còn metadata embedding/kết quả đánh giá (`product_embeddings`, `model_runs`, `model_evaluations` rỗng) dù tệp `.npz` vẫn còn. Đã sao lưu DB vào `data/velastyle-backup-20261025.db` trước khi chạy.
+
+- `scripts/generate_embeddings.py`: 257/257 sản phẩm, tất cả có ảnh, `openai/clip-vit-base-patch32`, CPU (~3 phút, gồm tải model lần đầu).
+- `scripts/train_cf.py`: 51 người dùng, 257 sản phẩm.
+- Đánh giá qua `run_task` của trang quản trị, K = 5/10/20; kết quả đầy đủ: `artifacts/evaluation-2026-10-25.json`. Dữ liệu 100% mô phỏng, 51 người dùng, 6.040 tương tác train, α = 0,5.
+
+| K = 10 | Precision | Recall = Hit Rate | NDCG | Coverage | ms |
+| --- | --- | --- | --- | --- | --- |
+| Collaborative | 0,031 | 0,314 | 0,207 | 0,564 | 0,21 |
+| Hybrid | 0,027 | 0,275 | 0,168 | 0,529 | 2,79 |
+| CLIP | 0,004 | 0,039 | 0,014 | 0,198 | 2,71 |
+| Ngẫu nhiên (kỳ vọng giải tích, không phải mô hình) | 0,005 | 0,055 | 0,025 | — | — |
+
+CF > Hybrid > ngẫu nhiên > CLIP trên dữ liệu mô phỏng: tương tác seed được sinh theo nhãn `style` minh họa, không liên quan đến nội dung ảnh.
+
+- `RUN_CLIP_TESTS=1 python -m pytest -q`: **23 passed**.
+
 ## Bản nâng cấp giao diện và dữ liệu
 
 ### Hai khu vực thiết kế theo phong cách tạp chí

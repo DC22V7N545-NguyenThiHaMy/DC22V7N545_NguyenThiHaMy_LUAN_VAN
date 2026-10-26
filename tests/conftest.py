@@ -6,6 +6,9 @@ import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 _test_dir = tempfile.TemporaryDirectory(prefix='velastyle-tests-')
 os.environ['DATABASE_URL'] = 'sqlite:///' + (Path(_test_dir.name) / 'test.db').as_posix()
+# Real credentials in .env must never be used by tests: no real emails, no Google. Mail goes to mailer.outbox instead.
+for _name in ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'CORS_ORIGINS']:
+    os.environ[_name] = ''
 
 import pytest
 from fastapi.testclient import TestClient

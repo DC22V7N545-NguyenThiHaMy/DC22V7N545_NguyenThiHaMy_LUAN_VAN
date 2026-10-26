@@ -9,4 +9,8 @@ data/embeddings/*
 app/static/uploads/*
 !app/static/uploads/.gitkeep
 *.log
+.claude/settings.local.json
 .python/
+
+# Dữ liệu ngoài tải về cho thí nghiệm (xem docs/guides/real-data-experiment.md)
+data/external/
